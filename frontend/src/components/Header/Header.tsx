@@ -14,7 +14,7 @@ const Header: React.FC<HeaderProps> = ({ account, networkLabel, onConnectWallet 
     <header className="app-header">
       <div className="logo-block">
         <p className="logo-eyebrow">Web3Bridge</p>
-        <h1>FemiToken DApp</h1>
+        <h1>FemiToken DApp ⚡</h1>
       </div>
       <div className="header-actions">
         <span className="network-pill">

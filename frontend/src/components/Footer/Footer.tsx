@@ -4,7 +4,7 @@ import './Footer.css';
 const Footer: React.FC = () => {
   return (
     <footer className="app-footer">
-      <p>&copy; {new Date().getFullYear()} Femi Token Lab. Built for local testnet workflows.</p>
+      <p>&copy; {new Date().getFullYear()} Femi Token DApp. Built for Web3Bridge 🌟.</p>
     </footer>
   );
 };
