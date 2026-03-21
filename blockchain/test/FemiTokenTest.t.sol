@@ -8,6 +8,7 @@ import {FemiToken} from "../src/FemiToken.sol";
 contract FemiTokenTest is Test {
   error OnlyOwnerCanCallThisFucntion();
   error MaxSupplyLimitReached();
+  error CannotClaimYet();
 
   address public owner;
   address public youngAncient = makeAddr("Young Ancient");
@@ -60,4 +61,38 @@ contract FemiTokenTest is Test {
     vm.expectRevert(MaxSupplyLimitReached.selector);
     token.mint(youngAncient, _amount);
   }
+
+  function test__UserCanRequestTokenFromFaucet() public {
+    // Ensure user has not claimed yet
+    assertEq(token.getUserLastClaimTime(youngAncient), 0);
+
+    vm.prank(youngAncient);
+    token.requestToken();
+
+    assertEq(token.balanceOf(youngAncient), token.faucetClaimAmount());
+    assertEq(token.totalSupply(), token.faucetClaimAmount());
+    assertEq(token.getUserLastClaimTime(youngAncient), block.timestamp);
+  }
+
+  function test__CannotRequestTokenTwiceInQuickSuccession() public {
+    vm.startPrank(youngAncient);
+    
+    // First claim
+    token.requestToken();
+    
+    // Second claim immediately should revert
+    vm.expectRevert(CannotClaimYet.selector);
+    token.requestToken();
+    
+    // Advance time beyond delay
+    vm.warp(block.timestamp + token.FAUCET_CLAIM_DELAY() + 1);
+    
+    // Should succeed now
+    token.requestToken();
+    
+    vm.stopPrank();
+    assertEq(token.balanceOf(youngAncient), token.faucetClaimAmount() * 2);
+  }
+
+  
 }
