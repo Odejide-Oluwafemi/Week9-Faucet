@@ -5,14 +5,12 @@ import {Script} from "forge-std/Script.sol";
 import {FemiToken} from "../src/FemiToken.sol";
 
 contract DeployFemiToken is Script {
-  function run() external returns (FemiToken) {
-    vm.startBroadcast();
+  address public owner = makeAddr("Odejide Oluwafemi");
 
+  function run() external returns (FemiToken, address) {
+    vm.broadcast(owner);
     FemiToken token = new FemiToken();
 
-    vm.stopBroadcast();
-
-    return token;
-  
+    return (token, owner);
   }
 }
