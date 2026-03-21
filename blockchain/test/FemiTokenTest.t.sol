@@ -6,6 +6,9 @@ import {DeployFemiToken} from "../script/DeployFemiToken.s.sol";
 import {FemiToken} from "../src/FemiToken.sol";
 
 contract FemiTokenTest is Test {
+  error OnlyOwnerCanCallThisFucntion();
+  error MaxSupplyLimitReached();
+
   address public owner;
   address public youngAncient = makeAddr("Young Ancient");
 
@@ -41,14 +44,20 @@ contract FemiTokenTest is Test {
     assertEq(token.balanceOf(youngAncient), _amount);
     assertEq(token.totalSupply(), _amount);
   }
-  
-  function test__ItMintsWhenTotalSupplyIsNotAboveMaxSupplyLimit() public {
+
+  function test__ItRevertsWhenSomeoneElseCallsMint() public {
     uint256 _amount = MAX_SUPPLY;
 
-    vm.prank(owner);
+    vm.prank(youngAncient);
+    vm.expectRevert(OnlyOwnerCanCallThisFucntion.selector);
     token.mint(youngAncient, _amount);
+  }
 
-    assertEq(token.balanceOf(youngAncient), _amount);
-    assertEq(token.totalSupply(), _amount);
+  function test__ItRevertsWhenMintingAndTotalSupplyIsAboveMaxSupplyLimit() public {
+    uint256 _amount = MAX_SUPPLY + 1;
+
+    vm.prank(owner);
+    vm.expectRevert(MaxSupplyLimitReached.selector);
+    token.mint(youngAncient, _amount);
   }
 }
