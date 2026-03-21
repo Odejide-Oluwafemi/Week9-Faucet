@@ -1,0 +1,116 @@
+.info-container {
+  text-align: left;
+}
+
+.info-grid-token {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.info-item-token {
+  background: rgba(10, 20, 36, 0.62);
+  padding: 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  text-align: left;
+}
+
+.info-item-token.full-width {
+  grid-column: 1 / -1;
+}
+
+.info-label-token {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.45rem;
+}
+
+.info-value-token {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  font-family: var(--mono);
+  word-break: break-all;
+}
+
+.balance-lookup {
+  margin-top: 1.2rem;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  background: rgba(10, 20, 36, 0.58);
+}
+
+.lookup-title {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+}
+
+.lookup-form {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.lookup-input {
+  flex-grow: 1;
+  background-color: rgba(10, 20, 36, 0.62);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  color: var(--text-main);
+  padding: 0.72rem 0.9rem;
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 0.95rem;
+}
+
+.lookup-btn {
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  background: linear-gradient(120deg, #8b5cf6 0%, #56f0c6 100%);
+  color: #fff;
+  padding: 0.7rem 1rem;
+  box-shadow: 0 12px 24px rgba(12, 7, 22, 0.5);
+}
+
+.lookup-btn:hover {
+  transform: translateY(-1px);
+}
+
+.lookup-result {
+  margin-top: 0.85rem;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.balance-value {
+  color: var(--text-main);
+  font-weight: 600;
+  font-family: var(--mono);
+}
+
+.input-error {
+  border-color: rgba(239, 68, 68, 0.75) !important;
+}
+
+.field-error-msg {
+  font-size: 0.78rem;
+  color: #f87171;
+  padding-left: 0.2rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+
+@media (max-width: 720px) {
+  .lookup-form {
+    flex-direction: column;
+  }
+
+  .lookup-btn {
+    width: 100%;
+  }
+}

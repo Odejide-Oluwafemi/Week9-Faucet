@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap');
+
+:root {
+  --bg-0: #060b14;
+  --bg-1: #0d1628;
+  --surface-soft: rgba(20, 34, 57, 0.76);
+  --surface-strong: rgba(15, 27, 46, 0.92);
+  --border-color: rgba(139, 92, 246, 0.28);
+  --text-main: #eff6ff;
+  --text-muted: #a8bfdd;
+  --accent: #56f0c6;
+  --accent-2: #8b5cf6;
+  --warning: #ffb65a;
+  --danger: #ff7a8a;
+  --shadow-soft: 0 22px 56px rgba(3, 8, 18, 0.55);
+
+  --sans: 'Inter', 'Segoe UI', sans-serif;
+  --heading: 'Sora', 'Inter', sans-serif;
+  --mono: 'JetBrains Mono', Consolas, monospace;
+
+  font-family: var(--sans);
+  color: var(--text-main);
+  background-color: var(--bg-0);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(960px 560px at 8% -10%, rgba(139, 92, 246, 0.24), transparent 62%),
+    radial-gradient(860px 520px at 96% -6%, rgba(86, 240, 198, 0.2), transparent 62%),
+    linear-gradient(165deg, #050a12 0%, #0a1324 45%, #111f37 100%);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-family: var(--heading);
+  letter-spacing: -0.015em;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid rgba(139, 92, 246, 0.45);
+  outline-offset: 1px;
+}

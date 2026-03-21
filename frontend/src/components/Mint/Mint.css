@@ -1,0 +1,75 @@
+.mint-container {
+  text-align: left;
+}
+
+.mint-title {
+  font-size: 1.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.mint-description {
+  color: #ffbe70;
+  margin-bottom: 1.1rem;
+  font-weight: 600;
+}
+
+.mint-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.mint-input {
+  background: rgba(10, 20, 36, 0.62);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  color: var(--text-main);
+  padding: 0.78rem 0.95rem;
+  border-radius: 10px;
+  font-family: var(--mono);
+  font-size: 1rem;
+  width: 100%;
+}
+
+.mint-input::placeholder {
+  color: #a892c9;
+}
+
+.mint-btn {
+  width: 100%;
+  margin-top: 0.2rem;
+  padding: 0.88rem;
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(120deg, #ff9b61 0%, #ff6f8e 100%);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(16, 8, 24, 0.56);
+}
+
+.mint-btn:hover {
+  transform: translateY(-1px);
+}
+
+.mint-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.input-error {
+  border-color: rgba(239, 68, 68, 0.75) !important;
+}
+
+.field-error-msg {
+  font-size: 0.78rem;
+  color: #f87171;
+  padding-left: 0.2rem;
+}
+
