@@ -10,14 +10,17 @@ interface FaucetProps {
   requestTokens: () => void | Promise<void>;
   onConnectWallet: () => void;
   loading: boolean;
+  requesting: boolean;
 }
 
-const Faucet: React.FC<FaucetProps> = ({ account, balance, nextClaim, lastClaimAt, faucetClaimAmount, requestTokens, onConnectWallet, loading }) => {
+const Faucet: React.FC<FaucetProps> = ({ account, balance, nextClaim, lastClaimAt, faucetClaimAmount, requestTokens, onConnectWallet, loading, requesting }) => {
   return (
     <>
       <h2 className="faucet-title">Claim Tokens</h2>
       <p className="faucet-description">
-        Get your daily dose of {faucetClaimAmount} FMT tokens here. Connect your wallet to get started.
+        {faucetClaimAmount && faucetClaimAmount !== '0'
+          ? `Get your daily dose of ${faucetClaimAmount} FMT tokens here. Connect your wallet to get started.`
+          : 'Connect your wallet to claim your daily FMT tokens.'}
       </p>
 
       <div className="info-grid">
@@ -37,7 +40,11 @@ const Faucet: React.FC<FaucetProps> = ({ account, balance, nextClaim, lastClaimA
 
       {account ? (
         <button className="request-btn" onClick={requestTokens} disabled={loading || nextClaim !== 'Now'}>
-          {loading ? 'Requesting...' : `Request ${faucetClaimAmount} FMT`}
+          {requesting
+            ? 'Requesting...'
+            : faucetClaimAmount && faucetClaimAmount !== '0'
+              ? `Request ${faucetClaimAmount} FMT`
+              : 'Request Tokens'}
         </button>
       ) : (
         <button className="request-btn" onClick={onConnectWallet}>Connect Wallet to Claim</button>

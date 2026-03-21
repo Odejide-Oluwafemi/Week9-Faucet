@@ -12,7 +12,9 @@ interface TransferProps {
   handleApprove: (spender: string, amount: string) => void | Promise<void>;
   handleCheckAllowance: (owner: string, spender: string) => Promise<string>;
   handleTransferFrom: (from: string, to: string, amount: string) => void | Promise<void>;
-  loading: boolean;
+  isTransferring: boolean;
+  isApproving: boolean;
+  isTransferringFrom: boolean;
 }
 
 const Transfer: React.FC<TransferProps> = ({
@@ -20,7 +22,9 @@ const Transfer: React.FC<TransferProps> = ({
   handleApprove,
   handleCheckAllowance,
   handleTransferFrom,
-  loading,
+  isTransferring,
+  isApproving,
+  isTransferringFrom,
 }) => {
   const [to, setTo] = useState('');
   const [amount, setAmount] = useState('');
@@ -110,8 +114,8 @@ const Transfer: React.FC<TransferProps> = ({
             />
             {amountError && <span className="field-error-msg">{amountError}</span>}
           </div>
-          <button className="transfer-btn" onClick={onTransfer} disabled={loading || !isValidAddress(to) || !isValidAmount(amount)}>
-            {loading ? 'Sending...' : 'Send Tokens'}
+          <button className="transfer-btn" onClick={onTransfer} disabled={isTransferring || !isValidAddress(to) || !isValidAmount(amount)}>
+            {isTransferring ? 'Sending...' : 'Send Tokens'}
           </button>
         </div>
       </div>
@@ -142,8 +146,8 @@ const Transfer: React.FC<TransferProps> = ({
             />
             {approveAmountError && <span className="field-error-msg">{approveAmountError}</span>}
           </div>
-          <button className="transfer-btn" onClick={onApprove} disabled={loading || !isValidAddress(approveTo) || !isValidAmount(approveAmount)}>
-            {loading ? 'Approving...' : 'Approve'}
+          <button className="transfer-btn" onClick={onApprove} disabled={isApproving || !isValidAddress(approveTo) || !isValidAmount(approveAmount)}>
+            {isApproving ? 'Approving...' : 'Approve'}
           </button>
         </div>
       </div>
@@ -221,8 +225,8 @@ const Transfer: React.FC<TransferProps> = ({
             />
             {tfAmountError && <span className="field-error-msg">{tfAmountError}</span>}
           </div>
-          <button className="transfer-btn" onClick={onTransferFrom} disabled={loading || !isValidAddress(transferFromFrom) || !isValidAddress(transferFromTo) || !isValidAmount(transferFromAmount)}>
-            {loading ? 'Transferring...' : 'Transfer From'}
+          <button className="transfer-btn" onClick={onTransferFrom} disabled={isTransferringFrom || !isValidAddress(transferFromFrom) || !isValidAddress(transferFromTo) || !isValidAmount(transferFromAmount)}>
+            {isTransferringFrom ? 'Transferring...' : 'Transfer From'}
           </button>
         </div>
       </div>

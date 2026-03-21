@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
@@ -61,7 +61,31 @@ function App() {
 
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
-  const account = isConnected && address ? address : null;
+
+  // Debounce account clearing to prevent brief AppKit isConnected flickers
+  // during transaction signing from falsely hiding wallet-gated UI.
+  const [account, setAccount] = useState<string | null>(null);
+  const disconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (isConnected && address) {
+      if (disconnectTimerRef.current) {
+        clearTimeout(disconnectTimerRef.current);
+        disconnectTimerRef.current = null;
+      }
+      const t = setTimeout(() => setAccount(address), 0);
+      return () => clearTimeout(t);
+    }
+    disconnectTimerRef.current = setTimeout(() => {
+      disconnectTimerRef.current = null;
+      setAccount(null);
+    }, 500);
+    return () => {
+      if (disconnectTimerRef.current) {
+        clearTimeout(disconnectTimerRef.current);
+        disconnectTimerRef.current = null;
+      }
+    };
+  }, [address, isConnected]);
 
   const {
     getBalance,
@@ -357,6 +381,7 @@ function App() {
             requestTokens={handleRequestTokens}
             onConnectWallet={handleConnectWallet}
             loading={loading}
+            requesting={isRequestingToken}
             faucetClaimAmount={faucetClaimAmount}
           />
         );
@@ -367,7 +392,9 @@ function App() {
             handleApprove={handleApprove}
             handleCheckAllowance={handleCheckAllowance}
             handleTransferFrom={handleTransferFrom}
-            loading={loading}
+            isTransferring={isTransferring}
+            isApproving={isApproving}
+            isTransferringFrom={isTransferringFrom}
           />
         );
       case "mint":
@@ -392,6 +419,7 @@ function App() {
             requestTokens={handleRequestTokens}
             onConnectWallet={handleConnectWallet}
             loading={loading}
+            requesting={isRequestingToken}
             faucetClaimAmount={faucetClaimAmount}
           />
         );
@@ -427,7 +455,7 @@ function App() {
               <strong>{balance}</strong>
             </div>
             <div className="metric-pill">
-              <span>Tx Sent Today</span>
+              <span>Tx Sent in this session</span>
               <strong>{txCount}</strong>
             </div>
             <div className={`metric-pill ${isOwner ? "owner-pill" : ""}`}>
