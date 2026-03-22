@@ -11,6 +11,7 @@ A minimal DApp for interacting with the **FMT** ERC-20 token on Lisk Sepolia Tes
 | **Address** | 0xA2bFe62dE3DCa989A6b31d3E7309202d29c60178 |
 | **Network** | Lisk Sepolia Testnet (chain ID 4202) |
 | **Explorer** | [View on Blockscout](https://sepolia-blockscout.lisk.com/address/0xA2bFe62dE3DCa989A6b31d3E7309202d29c60178) |
+| **Live Link** | https://femitoken-dapp.vercel.app/ |
 
 ---
 
