@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useRef, useState } from "react";
+import { toast, ToastContainer } from "react-toastify";
 import "./App.css";
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
@@ -11,17 +12,7 @@ import "./connection.ts";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useReadFunctions } from "./hooks/contractHook/useReadContract.ts";
 import { useWriteFunctions } from "./hooks/contractHook/useWriteContract.ts";
-
 import type { Tab, TokenDetails } from "./types";
-
-type ToastTone = "success" | "info" | "warning";
-
-interface ToastItem {
-  id: number;
-  title: string;
-  detail: string;
-  tone: ToastTone;
-}
 
 const defaultTokenDetails: TokenDetails = {
   name: "-",
@@ -32,29 +23,24 @@ const defaultTokenDetails: TokenDetails = {
 };
 
 const formatCountdown = (seconds: number): string => {
-  const safeSeconds = Math.max(0, Math.floor(seconds));
-  const hours = String(Math.floor(safeSeconds / 3600)).padStart(2, "0");
-  const minutes = String(Math.floor((safeSeconds % 3600) / 60)).padStart(2, "0");
-  const secs = String(safeSeconds % 60).padStart(2, "0");
-  return `${hours}h ${minutes}m ${secs}s`;
+  const s = Math.max(0, Math.floor(seconds));
+  const hh = String(Math.floor(s / 3600)).padStart(2, "0");
+  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+  const ss = String(s % 60).padStart(2, "0");
+  return `${hh}h ${mm}m ${ss}s`;
 };
 
 const formatTokenValue = (value: string): string => {
-  const numeric = Number(value);
-  if (Number.isNaN(numeric)) {
-    return value;
-  }
-  return numeric.toLocaleString(undefined, { maximumFractionDigits: 6 });
+  const n = Number(value);
+  return Number.isNaN(n) ? value : n.toLocaleString(undefined, { maximumFractionDigits: 6 });
 };
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>("faucet");
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [txCount, setTxCount] = useState(0);
-
   const [ownerAddress, setOwnerAddress] = useState<string | null>(null);
   const [balance, setBalance] = useState("0");
-  const [nextClaimSeconds, setNextClaimSeconds] = useState<number>(0);
+  const [nextClaimSeconds, setNextClaimSeconds] = useState(0);
   const [lastClaimAt, setLastClaimAt] = useState("-");
   const [faucetClaimAmount, setFaucetClaimAmount] = useState("0");
   const [tokenDetails, setTokenDetails] = useState<TokenDetails>(defaultTokenDetails);
@@ -62,294 +48,151 @@ function App() {
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
 
-  // Debounce account clearing to prevent brief AppKit isConnected flickers
-  // during transaction signing from falsely hiding wallet-gated UI.
+  // Debounce account clearing to survive brief mid-tx isConnected flickers
   const [account, setAccount] = useState<string | null>(null);
   const disconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
+    if (disconnectTimerRef.current) clearTimeout(disconnectTimerRef.current);
     if (isConnected && address) {
-      if (disconnectTimerRef.current) {
-        clearTimeout(disconnectTimerRef.current);
-        disconnectTimerRef.current = null;
-      }
       const t = setTimeout(() => setAccount(address), 0);
       return () => clearTimeout(t);
     }
     disconnectTimerRef.current = setTimeout(() => {
-      disconnectTimerRef.current = null;
       setAccount(null);
+      disconnectTimerRef.current = null;
     }, 500);
     return () => {
-      if (disconnectTimerRef.current) {
-        clearTimeout(disconnectTimerRef.current);
-        disconnectTimerRef.current = null;
-      }
+      if (disconnectTimerRef.current) clearTimeout(disconnectTimerRef.current);
     };
   }, [address, isConnected]);
 
-  const {
-    getBalance,
-    getOwner,
-    getTokenDetail,
-    getFaucetClaimAmount,
-    getFaucetClaimDelay,
-    getAllowance,
-    isLoadingBalance,
-    isLoadingDetails,
-    isLoadingFaucetClaimAmount,
-    isLoadingFaucetClaimDelay,
-    isGettingOwner,
-    isGettingAllowance,
-    isLoadingUserLastClaimTime,
-    isLoadingUserTimeSinceLastClaim,
-    getUserLastClaimTime,
-    getUserTimeSinceLastClaim,
-  } = useReadFunctions();
-
-  const {
-    mintToken,
-    transfer,
-    transferFrom,
-    approve,
-    requestToken,
-    isApproving,
-    isMinting,
-    isTransferring,
-    isTransferringFrom,
-    isRequestingToken,
-  } = useWriteFunctions();
+  const { getBalance, getOwner, getTokenDetail, getFaucetClaimAmount, getFaucetClaimDelay, getAllowance, getUserLastClaimTime, getUserTimeSinceLastClaim } = useReadFunctions();
+  const { mintToken, transfer, transferFrom, approve, requestToken, isApproving, isMinting, isTransferring, isTransferringFrom, isRequestingToken } = useWriteFunctions();
 
   const isOwner = account?.toLowerCase() === ownerAddress?.toLowerCase();
-  const networkLabel = "Lisk Sepolia Testnet";
+  const loading = isMinting || isTransferring || isTransferringFrom || isApproving || isRequestingToken;
+  const nextClaim = nextClaimSeconds > 0 ? formatCountdown(nextClaimSeconds) : "Now";
 
-  const loading = useMemo(
-    () =>
-      isLoadingBalance ||
-      isLoadingDetails ||
-      isLoadingFaucetClaimAmount ||
-      isLoadingFaucetClaimDelay ||
-      isGettingOwner ||
-      isGettingAllowance ||
-      isLoadingUserLastClaimTime ||
-      isLoadingUserTimeSinceLastClaim ||
-      isMinting ||
-      isTransferring ||
-      isTransferringFrom ||
-      isApproving ||
-      isRequestingToken,
-    [
-      isLoadingBalance,
-      isLoadingDetails,
-      isLoadingFaucetClaimAmount,
-      isLoadingFaucetClaimDelay,
-      isGettingOwner,
-      isGettingAllowance,
-      isLoadingUserLastClaimTime,
-      isLoadingUserTimeSinceLastClaim,
-      isMinting,
-      isTransferring,
-      isTransferringFrom,
-      isApproving,
-      isRequestingToken,
-    ]
-  );
+  const handleConnectWallet = () => void open();
 
-  const nextClaim = useMemo(
-    () => (nextClaimSeconds > 0 ? formatCountdown(nextClaimSeconds) : "Now"),
-    [nextClaimSeconds]
-  );
-
-  const pushToast = useCallback(
-    (title: string, detail: string, tone: ToastTone = "info") => {
-      const id = Date.now() + Math.floor(Math.random() * 10000);
-      setToasts((prev) => [...prev, { id, title, detail, tone }]);
-      setTimeout(() => {
-        setToasts((prev) => prev.filter((toast) => toast.id !== id));
-      }, 3400);
-    },
-    []
-  );
-
-  const handleConnectWallet = useCallback(() => {
-    void open();
-  }, [open]);
-
+  // Countdown ticker
   useEffect(() => {
-    if (nextClaimSeconds > 0) {
-      const interval = setInterval(() => {
-        setNextClaimSeconds((prev) => {
-          if (prev <= 1) return 0;
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-    return undefined;
+    if (nextClaimSeconds <= 0) return undefined;
+    const interval = setInterval(() => {
+      setNextClaimSeconds((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
   }, [nextClaimSeconds]);
 
   const refreshTokenData = useCallback(async () => {
-    const [detailResult, ownerResult, faucetAmountResult] = await Promise.all([
+    const [detail, owner, faucetAmount] = await Promise.all([
       getTokenDetail(),
       getOwner(),
       getFaucetClaimAmount(),
     ]);
-
-    if (detailResult) {
+    if (detail) {
       setTokenDetails({
-        name: detailResult.name,
-        symbol: detailResult.symbol,
-        decimals: detailResult.decimal,
-        currentSupply: formatTokenValue(detailResult.currentSupply),
-        maxSupply: formatTokenValue(detailResult.maxSupply),
+        name: detail.name,
+        symbol: detail.symbol,
+        decimals: detail.decimal,
+        currentSupply: formatTokenValue(detail.currentSupply),
+        maxSupply: formatTokenValue(detail.maxSupply),
       });
     }
-
-    if (ownerResult) {
-      setOwnerAddress(ownerResult);
-    }
-
-    if (faucetAmountResult) {
-      setFaucetClaimAmount(formatTokenValue(faucetAmountResult));
-    }
+    if (owner) setOwnerAddress(owner);
+    if (faucetAmount) setFaucetClaimAmount(formatTokenValue(faucetAmount));
   }, [getFaucetClaimAmount, getOwner, getTokenDetail]);
 
   const refreshAccountData = useCallback(async () => {
-    if (!account) {
-      return;
-    }
-
-    const [balanceResult, lastClaimTimestampResult, elapsedSinceClaimResult, faucetDelayResult] = await Promise.all([
+    if (!account) return;
+    const [bal, lastClaimTime, timeSinceClaim, faucetDelay] = await Promise.all([
       getBalance(account),
       getUserLastClaimTime(),
       getUserTimeSinceLastClaim(),
       getFaucetClaimDelay(),
     ]);
-
-    if (balanceResult !== null && balanceResult !== undefined) {
-      setBalance(formatTokenValue(balanceResult));
+    if (bal != null) setBalance(formatTokenValue(bal));
+    if (lastClaimTime != null) {
+      const ts = Number(lastClaimTime);
+      setLastClaimAt(ts > 0 ? new Date(ts * 1000).toLocaleString() : "Never");
     }
-
-    if (lastClaimTimestampResult !== null && lastClaimTimestampResult !== undefined) {
-      const ts = Number(lastClaimTimestampResult);
-      if (ts > 0) {
-        setLastClaimAt(new Date(ts * 1000).toLocaleString());
-      } else {
-        setLastClaimAt("Never");
-      }
-    }
-
-    if (elapsedSinceClaimResult !== null && elapsedSinceClaimResult !== undefined && faucetDelayResult !== null && faucetDelayResult !== undefined) {
-      const elapsedSeconds = Number(elapsedSinceClaimResult);
-      const faucetDelaySeconds = Number(faucetDelayResult);
-      const remaining = Math.max(0, faucetDelaySeconds - elapsedSeconds);
-      setNextClaimSeconds(remaining);
+    if (timeSinceClaim != null && faucetDelay != null) {
+      setNextClaimSeconds(Math.max(0, Number(faucetDelay) - Number(timeSinceClaim)));
     }
   }, [account, getBalance, getFaucetClaimDelay, getUserLastClaimTime, getUserTimeSinceLastClaim]);
 
-  // Load token metadata on mount — no wallet needed (read-only).
+  // Load token metadata once on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      void refreshTokenData();
-    }, 0);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => void refreshTokenData(), 0);
+    return () => clearTimeout(t);
   }, [refreshTokenData]);
 
-  // Load account-specific data whenever the connected wallet address changes.
+  // Load account data when wallet connects/changes
   useEffect(() => {
-    if (!account) {
-      return;
-    }
-    const timer = setTimeout(() => {
-      void refreshAccountData();
-    }, 0);
-    return () => clearTimeout(timer);
+    if (!account) return;
+    const t = setTimeout(() => void refreshAccountData(), 0);
+    return () => clearTimeout(t);
   }, [account, refreshAccountData]);
 
-  const handleRequestTokens = useCallback(async () => {
-    if (!account) {
-      handleConnectWallet();
-      return;
-    }
-
+  const handleRequestTokens = async () => {
+    if (!account) { handleConnectWallet(); return; }
     const success = await requestToken();
     if (success) {
-      setTxCount((prev) => prev + 1);
-      pushToast("Faucet Claim Sent", `Received ${faucetClaimAmount} ${tokenDetails.symbol}.`, "success");
+      setTxCount((n) => n + 1);
+      toast.success(`Received ${faucetClaimAmount} ${tokenDetails.symbol} from faucet.`);
       await refreshAccountData();
       await refreshTokenData();
     }
-  }, [account, faucetClaimAmount, handleConnectWallet, pushToast, refreshAccountData, refreshTokenData, requestToken, tokenDetails.symbol]);
+  };
 
-  const handleTransfer = useCallback(async (to: string, amount: string) => {
+  const handleTransfer = async (to: string, amount: string) => {
     const success = await transfer(amount, to);
     if (success) {
-      setTxCount((prev) => prev + 1);
-      pushToast(
-        "Transfer Confirmed",
-        `${amount} ${tokenDetails.symbol} sent to ${to.slice(0, 6)}...${to.slice(-4)}.`,
-        "success"
-      );
+      setTxCount((n) => n + 1);
+      toast.success(`${amount} ${tokenDetails.symbol} sent to ${to.slice(0, 6)}...${to.slice(-4)}.`);
       await refreshAccountData();
       await refreshTokenData();
     }
-  }, [pushToast, refreshAccountData, refreshTokenData, tokenDetails.symbol, transfer]);
+  };
 
-  const handleMint = useCallback(async (to: string, amount: string) => {
+  const handleMint = async (to: string, amount: string) => {
     const success = await mintToken(to, amount);
     if (success) {
-      setTxCount((prev) => prev + 1);
-      pushToast(
-        "Mint Completed",
-        `${amount} ${tokenDetails.symbol} minted to ${to.slice(0, 6)}...${to.slice(-4)}.`,
-        "success"
-      );
+      setTxCount((n) => n + 1);
+      toast.success(`${amount} ${tokenDetails.symbol} minted to ${to.slice(0, 6)}...${to.slice(-4)}.`);
       await refreshTokenData();
       await refreshAccountData();
     }
-  }, [mintToken, pushToast, refreshAccountData, refreshTokenData, tokenDetails.symbol]);
+  };
 
-  const getBalanceOf = useCallback(async (addressToCheck: string): Promise<string> => {
-    const queriedBalance = await getBalance(addressToCheck);
-    if (!queriedBalance) {
-      return "0";
-    }
-    return formatTokenValue(queriedBalance);
-  }, [getBalance]);
+  const getBalanceOf = async (addressToCheck: string): Promise<string> => {
+    const result = await getBalance(addressToCheck);
+    return result ? formatTokenValue(result) : "0";
+  };
 
-  const handleApprove = useCallback(async (spender: string, amount: string) => {
+  const handleApprove = async (spender: string, amount: string) => {
     const success = await approve(spender, amount);
     if (success) {
-      setTxCount((prev) => prev + 1);
-      pushToast(
-        "Approval Confirmed",
-        `Approved ${amount} ${tokenDetails.symbol} for ${spender.slice(0, 6)}...${spender.slice(-4)}.`,
-        "success"
-      );
+      setTxCount((n) => n + 1);
+      toast.success(`Approved ${amount} ${tokenDetails.symbol} for ${spender.slice(0, 6)}...${spender.slice(-4)}.`);
       await refreshAccountData();
     }
-  }, [approve, pushToast, refreshAccountData, tokenDetails.symbol]);
+  };
 
-  const handleCheckAllowance = useCallback(async (owner: string, spender: string): Promise<string> => {
-    const allowance = await getAllowance(owner, spender);
-    if (!allowance) {
-      return "0";
-    }
-    return formatTokenValue(allowance);
-  }, [getAllowance]);
+  const handleCheckAllowance = async (owner: string, spender: string): Promise<string> => {
+    const result = await getAllowance(owner, spender);
+    return result ? formatTokenValue(result) : "0";
+  };
 
-  const handleTransferFrom = useCallback(async (from: string, to: string, amount: string) => {
+  const handleTransferFrom = async (from: string, to: string, amount: string) => {
     const success = await transferFrom(from, to, amount);
     if (success) {
-      setTxCount((prev) => prev + 1);
-      pushToast(
-        "TransferFrom Confirmed",
-        `${amount} ${tokenDetails.symbol} transferred from ${from.slice(0, 6)}...${from.slice(-4)} to ${to.slice(0, 6)}...${to.slice(-4)}.`,
-        "success"
-      );
+      setTxCount((n) => n + 1);
+      toast.success(`${amount} ${tokenDetails.symbol} transferred from ${from.slice(0, 6)}...${from.slice(-4)}.`);
       await refreshAccountData();
       await refreshTokenData();
     }
-  }, [pushToast, refreshAccountData, refreshTokenData, tokenDetails.symbol, transferFrom]);
+  };
 
   const shortAddress = account
     ? `${account.slice(0, 6)}...${account.slice(-4)}`
@@ -360,9 +203,7 @@ function App() {
       return (
         <div className="empty-state">
           <h3>Wallet Needed For This View</h3>
-          <p>
-            Connect your wallet to unlock transfer and mint tools.
-          </p>
+          <p>Connect your wallet to unlock transfer and mint tools.</p>
           <button className="empty-state-btn" onClick={handleConnectWallet}>
             Connect Wallet
           </button>
@@ -401,28 +242,12 @@ function App() {
         return isOwner ? (
           <Mint handleMint={handleMint} loading={loading} />
         ) : (
-          <p className="access-warning">
-            Only the contract owner can access mint controls.
-          </p>
+          <p className="access-warning">Only the contract owner can access mint controls.</p>
         );
       case "info":
-        return (
-          <TokenInfo tokenDetails={tokenDetails} getBalanceOf={getBalanceOf} />
-        );
+        return <TokenInfo tokenDetails={tokenDetails} getBalanceOf={getBalanceOf} />;
       default:
-        return (
-          <Faucet
-            account={account}
-            balance={balance}
-            nextClaim={nextClaim}
-            lastClaimAt={lastClaimAt}
-            requestTokens={handleRequestTokens}
-            onConnectWallet={handleConnectWallet}
-            loading={loading}
-            requesting={isRequestingToken}
-            faucetClaimAmount={faucetClaimAmount}
-          />
-        );
+        return null;
     }
   };
 
@@ -434,7 +259,7 @@ function App() {
       <div className="ambient-grid" />
       <Header
         account={account}
-        networkLabel={networkLabel}
+        networkLabel="Lisk Sepolia Testnet"
         onConnectWallet={handleConnectWallet}
       />
       <main className="main-content">
@@ -470,22 +295,11 @@ function App() {
           isOwner={Boolean(isOwner)}
         />
         <div className="content-card">
-          {loading && (
-            <div className="busy-strip">
-              <span />
-            </div>
-          )}
+          {loading && <div className="busy-strip"><span /></div>}
           {renderContent()}
         </div>
       </main>
-      <div className="toast-stack" aria-live="polite" aria-atomic="false">
-        {toasts.map((toast) => (
-          <article key={toast.id} className={`toast-card toast-${toast.tone}`}>
-            <strong>{toast.title}</strong>
-            <p>{toast.detail}</p>
-          </article>
-        ))}
-      </div>
+      <ToastContainer position="bottom-right" theme="dark" />
       <Footer />
     </div>
   );

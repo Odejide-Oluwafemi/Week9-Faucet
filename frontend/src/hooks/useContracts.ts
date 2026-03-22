@@ -1,25 +1,23 @@
-import { useMemo } from "react";
-import useRunners from "./useRunners";
-import { Contract } from "ethers";
+import { useCallback, useMemo } from "react";
+import { useAppKitProvider } from "@reown/appkit/react";
+import { BrowserProvider, Contract, type Eip1193Provider, getAddress } from "ethers";
 import { TOKEN_ABI } from "../data/ABI";
-import { getAddress } from "ethers";
+import { jsonRpcProvider } from "../data/provider";
 
-export const useTokenContract = (withSigner = false) => {
-  const { readOnlyProvider, signer } = useRunners();
+const CONTRACT_ADDRESS = getAddress(import.meta.env.VITE_TOKEN_CONTRACT_ADDRESS);
 
-  return useMemo(() => {
-    if (withSigner) {
-      if (!signer) return null;
-      return new Contract(
-        getAddress(import.meta.env.VITE_TOKEN_CONTRACT_ADDRESS),
-        TOKEN_ABI,
-        signer
-      );
-    }
-    return new Contract(
-      getAddress(import.meta.env.VITE_TOKEN_CONTRACT_ADDRESS),
-      TOKEN_ABI,
-      readOnlyProvider
-    );
-  }, [readOnlyProvider, signer, withSigner]);
+// Read-only — no wallet needed
+export const useTokenContract = () =>
+  useMemo(() => new Contract(CONTRACT_ADDRESS, TOKEN_ABI, jsonRpcProvider), []);
+
+// Returns an async factory. Call it inside write functions so getSigner()
+// is only invoked at the moment the user clicks a button, not on every render.
+export const useWriteTokenContract = () => {
+  const { walletProvider } = useAppKitProvider<Eip1193Provider>("eip155");
+  return useCallback(async () => {
+    if (!walletProvider) return null;
+    const signer = await new BrowserProvider(walletProvider).getSigner();
+    return new Contract(CONTRACT_ADDRESS, TOKEN_ABI, signer);
+  }, [walletProvider]);
 };
+

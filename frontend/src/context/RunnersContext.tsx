@@ -1,6 +1,5 @@
 import {
   useEffect,
-  useRef,
   useMemo,
   useState,
   type ReactNode,
@@ -8,40 +7,31 @@ import {
 import { useAppKitProvider, useAppKitAccount } from "@reown/appkit/react";
 import { BrowserProvider, type Eip1193Provider, type JsonRpcSigner } from "ethers";
 import { jsonRpcProvider } from "../data/provider";
-import { RunnersContext } from "./runnersContextDef.ts";
+import { RunnersContext } from "./runnersContext";
 
 export const RunnersProvider = ({ children }: { children: ReactNode }) => {
   const [signer, setSigner] = useState<JsonRpcSigner | undefined>();
   const { walletProvider } = useAppKitProvider<Eip1193Provider>("eip155");
   const { address, isConnected } = useAppKitAccount();
 
-  // Keep a stable ref so the signer effect can always read the latest provider
-  // without listing it as a reactive dependency (prevents mid-tx flickering).
-  const walletProviderRef = useRef<Eip1193Provider | undefined>(undefined);
-  useEffect(() => {
-    walletProviderRef.current = walletProvider;
-  }, [walletProvider]);
-
-  // Re-derive the signer only when the connected address changes, not on every
-  // walletProvider reference change. This prevents mid-transaction disconnects
-  // caused by WalletConnect session refreshes that briefly null the provider.
   useEffect(() => {
     if (!isConnected || !address) {
       const t = setTimeout(() => setSigner(undefined), 0);
       return () => clearTimeout(t);
     }
-    const wp = walletProviderRef.current;
-    if (!wp) return;
+    // walletProvider may arrive in a separate render from address/isConnected.
+    // If it isn't ready yet (or briefly null mid-tx), hold the current signer.
+    if (!walletProvider) return;
 
     let cancelled = false;
-    const browserProvider = new BrowserProvider(wp);
-    void browserProvider.getSigner().then((newSigner) => {
-      if (!cancelled) setSigner(newSigner);
+    const browserProvider = new BrowserProvider(walletProvider);
+    void browserProvider.getSigner().then((s) => {
+      if (!cancelled) setSigner(s);
     });
     return () => {
       cancelled = true;
     };
-  }, [address, isConnected]);
+  }, [address, isConnected, walletProvider]);
 
   const value = useMemo(
     () => ({ signer, readOnlyProvider: jsonRpcProvider }),
@@ -52,3 +42,4 @@ export const RunnersProvider = ({ children }: { children: ReactNode }) => {
     <RunnersContext.Provider value={value}>{children}</RunnersContext.Provider>
   );
 };
+
